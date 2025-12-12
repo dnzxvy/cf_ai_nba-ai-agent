@@ -18,12 +18,19 @@ def search_player(name: str):
         raise HTTPException(status_code=404, detail="Player not found")
     return results
 
-@app.get("/player/{player_id}/lastgames")
-def player_last_games(player_id: int, num_games: int = 5):
+@app.get("/player/lastgames_by_name")
+def player_last_games(name: str, num_games: int = 5):
 
     """fetching the game log for a specific player
     also setting it to Regular Season as the NBA Playoffs have
     not started yet"""
+
+    results = players.find_players_by_full_name(name)
+    if not results:
+        raise HTTPException(status_code=404, detail="Player not found")
+
+        # take the first match (you could enhance later for multiple matches)
+        player_id = results[0]['id']
     try:
         gamelog = playergamelog.PlayerGameLog(
             player_id=str(player_id),
@@ -35,13 +42,13 @@ def player_last_games(player_id: int, num_games: int = 5):
         #takes the first input number of rows which are the most recent
         #games
 
-        return {"player_id": player_id, "recent_games": recent}
+        return {"player_name": name, "player_id": player_id, "recent_games": recent}
         # returns a dictionary of the player id and recent games
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/player/{player_id}/career")
+@app.get("/player/career_by_name")
 def player_career(player_id: int):
     try:
         career = playercareerstats.PlayerCareerStats(player_id=str(player_id))
