@@ -30,7 +30,7 @@ def player_last_games(name: str, num_games: int = 5):
         raise HTTPException(status_code=404, detail="Player not found")
 
         # take the first match (you could enhance later for multiple matches)
-        player_id = results[0]['id']
+    player_id = results[0]['id']
     try:
         gamelog = playergamelog.PlayerGameLog(
             player_id=str(player_id),
@@ -49,7 +49,16 @@ def player_last_games(name: str, num_games: int = 5):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/player/career_by_name")
-def player_career(player_id: int):
+def player_career_by_name(name: str):
+    """fetch career stats by typing player name
+    Example:
+    /player/career_by_name?name=LaMelo"""
+
+    results = players.find_players_by_full_name(name)
+    if not results:
+        raise HTTPException(status_code=404, detail="Player not found")
+    player_id = results[0]['id']
+
     try:
         career = playercareerstats.PlayerCareerStats(player_id=str(player_id))
         # fetch career totals
@@ -59,7 +68,7 @@ def player_career(player_id: int):
 
         seasons = df.to_dict(orient="records")
         # convert the dataframe to a list of dictionaries
-        return {"player_id": player_id, "seasons": seasons}
+        return {"player_name": name, "player_id": player_id, "seasons": seasons}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
