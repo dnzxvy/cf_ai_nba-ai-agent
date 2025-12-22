@@ -56,7 +56,22 @@ export default {
     //ai/analyze_player endpoint
     if (url.pathname == "/ai/analyze_player" && request.method === "POST") {
       try {
-        const body = await request.json();
+        interface AnalyzePlayerRequest {
+          name: string;
+        }
+        interface PlayerGame {
+          game_date: string;
+          pts: number;
+          reb: number;
+          ast: number;
+        }
+        interface LastGamesResponse {
+          player_name: string;
+          player_id: number;
+          recent_games: PlayerGame[];
+        }
+
+        const body: AnalyzePlayerRequest = await request.json();
         const playerName = body.name;
         if (!playerName) {
           return new Response(JSON.stringify({ error: "Missing player name" }), {
@@ -68,7 +83,7 @@ export default {
             playerName)}&num_games=5`)
             if (!statsRes.ok) throw new Error("Failed to fetch player stats");
 
-            const statsData = await statsRes.json();
+            const statsData: LastGamesResponse = await statsRes.json();
 
             // building ai prompt
 
