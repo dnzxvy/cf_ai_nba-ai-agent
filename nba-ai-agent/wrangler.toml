@@ -1,12 +1,13 @@
 name = "nba-ai-agent"
-main = "src/index.ts"
+main = "dist/index.js"
 compatibility_date = "2025-12-22"
 type = "javascript"
 
 [ai]
-binding = "AI"                       # enables workers AI
+binding = "AI"
 
 [build]
+command = "npm run build"
 upload_format = "modules"
 
 [triggers]
