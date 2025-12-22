@@ -1,6 +1,6 @@
 export interface Env {}
 
-const PYTHON_API_BASE = "https://your-fastapi-deployed-url.com";
+const PYTHON_API_BASE = "https://cf-ai-nba-ai-agent.onrender.com";
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
