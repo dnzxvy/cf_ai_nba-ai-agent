@@ -1,7 +1,13 @@
-name = "nba-ai-agent"                   # Worker name
-main = "src/index.ts"                   # Path to TS file
-compatibility_date = "2025-12-22"       # current runtime
-type = "javascript"                     # type
+name = "nba-ai-agent"
+main = "src/index.ts"
+compatibility_date = "2025-12-22"
+type = "javascript"
 
 [ai]
-binding = "AI"                           # enables Workers AI
+binding = "AI"                       # enables workers AI
+
+[build]
+upload_format = "modules"
+
+[triggers]
+crons = ["* * * * *"]
