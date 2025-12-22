@@ -1,0 +1,7 @@
+name = "nba-ai-agent"                   # Your Worker name
+main = "src/index.ts"                   # Path to your TS file
+compatibility_date = "2025-12-22"       # Today's date or current runtime
+type = "javascript"                     # Use 'javascript' even for TS
+
+[ai]
+binding = "AI"                           # This enables Workers AI

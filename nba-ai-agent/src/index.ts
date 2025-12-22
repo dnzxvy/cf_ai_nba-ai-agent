@@ -1,9 +1,11 @@
-export interface Env {}
+export interface Env {
+  AI: any;
+}
 
 const PYTHON_API_BASE = "https://cf-ai-nba-ai-agent.onrender.com";
 
 export default {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+  async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
     // Root endpoint
@@ -51,7 +53,55 @@ export default {
       }
     }
 
-    // Catch-all 404
-    return new Response(JSON.stringify({ error: "Endpoint not found" }), { status: 404, headers: { "Content-Type": "application/json" } });
-  },
+    //ai/analyze_player endpoint
+    if (url.pathname == "/ai/analyze_player" && request.method === "POST") {
+      try {
+        const body = await request.json();
+        const playerName = body.name;
+        if (!playerName) {
+          return new Response(JSON.stringify({ error: "Missing player name" }), {
+            status: 400, headers: { "Content-type": "application/json" } });
+            // this reads the user input
+          }
+          // fetches the last 5 games from Python code
+          const statsRes = await fetch(`${PYTHON_API_BASE}/player/lastgames_by_name?name=${encodeURIComponent(
+            playerName)}&num_games=5`)
+            if (!statsRes.ok) throw new Error("Failed to fetch player stats");
+
+            const statsData = await statsRes.json();
+
+            // building ai prompt
+
+            const prompt = `
+You are an expert NBA analyst.
+Analyze the following recent game stats and summarize the player's performance clearly and concisely.
+
+Player: ${playerName}
+Stats:
+${JSON.stringify(statsData.recent_games, null, 2)}
+`;
+            
+            // call llama 3.3 workers ai
+            const aiResponse = await env.AI.run("@cf/meta/llama-3.3-70b-instruct", {
+              prompt, max_tokens: 300});
+
+              return new Response(
+                JSON.stringify({player: playerName, analysis: aiResponse.response }),
+                { headers: {"Content-Type": "application/json" } }
+              );
+            } catch (err) {
+              return new Response(JSON.stringify({ error: String(err) }), {
+                status: 500, headers: { "Content-Type": "application/json" } });
+
+              }
+            }
+            return new Response(JSON.stringify({ error: "Endpoint not found" }), {
+              status: 404, headers: {"Content-Type": "application/json" } });
+            },          
+          
+          
+          
 };
+    
+
+    
