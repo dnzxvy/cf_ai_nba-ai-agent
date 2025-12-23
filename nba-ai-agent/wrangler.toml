@@ -12,7 +12,8 @@ upload_format = "modules"
 
 [[kv_namespaces]]
 binding = "NBA_MEMORY"
-id = "nba_memory"
+id = "65811f1e37504c58957deb32c4844fcb"
+preview_id = "e5a5b42954f94348a05358b8c0f9e0f5"
 
 
 [triggers]
