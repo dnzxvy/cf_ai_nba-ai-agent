@@ -132,13 +132,9 @@ ${JSON.stringify(statsData.recent_games, null, 2)}
               analysis,
               source: "ai"
             }), {
-              headers: { "Content=Type": "application/json" }
+              headers: { "Content-Type": "application/json" }
             });
-
-              return new Response(
-                JSON.stringify({player: playerName, analysis: aiResponse.response }),
-                { headers: {"Content-Type": "application/json" } }
-              );
+            
             } catch (err) {
               return new Response(JSON.stringify({ error: String(err) }), {
                 status: 500, headers: { "Content-Type": "application/json" } });
