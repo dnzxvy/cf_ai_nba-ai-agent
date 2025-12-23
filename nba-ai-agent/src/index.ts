@@ -1,8 +1,25 @@
 export interface Env {
   AI: any;
+  NBA_MEMORY: KVNamespace;
 }
 
 const PYTHON_API_BASE = "https://cf-ai-nba-ai-agent.onrender.com";
+interface AnalyzePlayerRequest {
+  name: string;
+}
+
+interface PlayerGame {
+  game_date: string;
+  pts: number;
+  reb: number;
+  ast: number;
+}
+
+interface LastGamesResponse {
+  player_name: string;
+  player_id: number;
+  recent_games: PlayerGame[];
+}
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -56,38 +73,45 @@ export default {
     //ai/analyze_player endpoint
     if (url.pathname == "/ai/analyze_player" && request.method === "POST") {
       try {
-        interface AnalyzePlayerRequest {
-          name: string;
-        }
-        interface PlayerGame {
-          game_date: string;
-          pts: number;
-          reb: number;
-          ast: number;
-        }
-        interface LastGamesResponse {
-          player_name: string;
-          player_id: number;
-          recent_games: PlayerGame[];
-        }
-
-        const body: AnalyzePlayerRequest = await request.json();
+        const body = await request.json() as AnalyzePlayerRequest;
         const playerName = body.name;
+
         if (!playerName) {
           return new Response(JSON.stringify({ error: "Missing player name" }), {
-            status: 400, headers: { "Content-type": "application/json" } });
-            // this reads the user input
-          }
-          // fetches the last 5 games from Python code
-          const statsRes = await fetch(`${PYTHON_API_BASE}/player/lastgames_by_name?name=${encodeURIComponent(
-            playerName)}&num_games=5`)
-            if (!statsRes.ok) throw new Error("Failed to fetch player stats");
+            status: 400,
+            headers: { "Content-Type": "application/json" }
 
-            const statsData: LastGamesResponse = await statsRes.json();
+          });
+        }
+
+        const memoryKey = `player:${playerName.toLowerCase()}`;
+
+        const cached = await env.NBA_MEMORY.get(memoryKey);
+
+        if (cached) {
+          return new Response(JSON.stringify({
+            player: playerName,
+            analysis: cached,
+            source: "memory"
+          }), {
+            headers: { "Content-Type": "application/json" }
+
+          });
+          // checking the memory first
+        }
+
+         const statsRes = await fetch(
+          `${PYTHON_API_BASE}/player/lastgames_by_name?name=${encodeURIComponent(playerName)}&num_games=5`
+        );
+        
+        if (!statsRes.ok) throw new Error("Failed to fetch player stats");
+
+        const statsData = await statsRes.json() as LastGamesResponse;
+        
 
             // building ai prompt
 
-            const prompt = `
+        const prompt = `
 You are an expert NBA analyst.
 Analyze the following recent game stats and summarize the player's performance clearly and concisely.
 
@@ -99,6 +123,17 @@ ${JSON.stringify(statsData.recent_games, null, 2)}
             // call llama 3.3 workers ai
             const aiResponse = await env.AI.run("@cf/meta/llama-3-8b-instruct", {
               prompt, max_tokens: 300});
+
+            const analysis = aiResponse.response;
+            await env.NBA_MEMORY.put(memoryKey, analysis)
+
+            return new Response(JSON.stringify({
+              player: playerName,
+              analysis,
+              source: "ai"
+            }), {
+              headers: { "Content=Type": "application/json" }
+            });
 
               return new Response(
                 JSON.stringify({player: playerName, analysis: aiResponse.response }),

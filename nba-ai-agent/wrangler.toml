@@ -10,5 +10,10 @@ binding = "AI"
 command = "npm run build"
 upload_format = "modules"
 
+[[kv_namespaces]]
+binding = "NBA_MEMORY"
+id = "nba_memory"
+
+
 [triggers]
 crons = ["* * * * *"]
