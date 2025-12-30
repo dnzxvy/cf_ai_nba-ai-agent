@@ -1,7 +1,7 @@
 export interface Env {
   AI: any;
   NBA_MEMORY: KVNamespace;
-  ASSETS: Fetcher; // This will be bound to your public folder
+  ASSETS: Fetcher; // Bind this to the public folder
 }
 
 const PYTHON_API_BASE = "https://cf-ai-nba-ai-agent.onrender.com";
@@ -39,18 +39,24 @@ export default {
     // /search_player endpoint
     if (url.pathname === "/search_player") {
       const name = url.searchParams.get("name");
-      if (!name) return new Response(JSON.stringify({ error: "Missing name parameter!" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+      if (!name)
+        return new Response(JSON.stringify({ error: "Missing name parameter!" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
 
       try {
-        const response = await fetch(`${PYTHON_API_BASE}/search_player?name=${encodeURIComponent(name)}`);
+        const response = await fetch(
+          `${PYTHON_API_BASE}/search_player?name=${encodeURIComponent(name)}`
+        );
         if (!response.ok) throw new Error(`Python API returned ${response.status}`);
         const data = await response.json();
         return new Response(JSON.stringify(data), { headers: { "Content-Type": "application/json" } });
       } catch (err) {
-        return new Response(JSON.stringify({ error: String(err) }), { status: 500, headers: { "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({ error: String(err) }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        });
       }
     }
 
@@ -59,31 +65,37 @@ export default {
       const name = url.searchParams.get("name");
       const numGames = url.searchParams.get("num_games") || "5";
 
-      if (!name) return new Response(JSON.stringify({ error: "Missing name parameter" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+      if (!name)
+        return new Response(JSON.stringify({ error: "Missing name parameter" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
 
       try {
-        const response = await fetch(`${PYTHON_API_BASE}/player/lastgames_by_name?name=${encodeURIComponent(name)}&num_games=${numGames}`);
+        const response = await fetch(
+          `${PYTHON_API_BASE}/player/lastgames_by_name?name=${encodeURIComponent(name)}&num_games=${numGames}`
+        );
         if (!response.ok) throw new Error(`Python API returned ${response.status}`);
         const data = await response.json();
         return new Response(JSON.stringify(data), { headers: { "Content-Type": "application/json" } });
       } catch (err) {
-        return new Response(JSON.stringify({ error: String(err) }), { status: 500, headers: { "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({ error: String(err) }), {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        });
       }
     }
 
     // /ai/analyze_player endpoint
     if (url.pathname === "/ai/analyze_player" && request.method === "POST") {
       try {
-        const body = await request.json() as AnalyzePlayerRequest;
+        const body = (await request.json()) as AnalyzePlayerRequest;
         const playerName = body.name;
 
         if (!playerName) {
           return new Response(JSON.stringify({ error: "Missing player name" }), {
             status: 400,
-            headers: { "Content-Type": "application/json" }
+            headers: { "Content-Type": "application/json" },
           });
         }
 
@@ -93,13 +105,14 @@ export default {
         const cached = await env.NBA_MEMORY.get(memoryKey);
 
         if (cached) {
-          return new Response(JSON.stringify({
-            player: playerName,
-            analysis: cached,
-            source: "memory"
-          }), {
-            headers: { "Content-Type": "application/json" }
-          });
+          return new Response(
+            JSON.stringify({
+              player: playerName,
+              analysis: cached,
+              source: "memory",
+            }),
+            { headers: { "Content-Type": "application/json" } }
+          );
         }
 
         // fetch stats from Python API
@@ -109,7 +122,7 @@ export default {
 
         if (!statsRes.ok) throw new Error("Failed to fetch player stats");
 
-        const statsData = await statsRes.json() as LastGamesResponse;
+        const statsData = (await statsRes.json()) as LastGamesResponse;
 
         // build AI prompt
         const prompt = `
@@ -122,25 +135,31 @@ ${JSON.stringify(statsData.recent_games, null, 2)}
 `;
 
         // call Llama AI
-        const aiResponse = await env.AI.run("@cf/meta/llama-3-8b-instruct", { prompt, max_tokens: 300 });
+        const aiResponse = await env.AI.run("@cf/meta/llama-3-8b-instruct", {
+          prompt,
+          max_tokens: 300,
+        });
 
         const analysis = aiResponse.response;
         await env.NBA_MEMORY.put(memoryKey, analysis);
 
-        return new Response(JSON.stringify({
-          player: playerName,
-          analysis,
-          source: "ai"
-        }), {
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*" // allow requests from any origin
+        return new Response(
+          JSON.stringify({
+            player: playerName,
+            analysis,
+            source: "ai",
+          }),
+          {
+            headers: {
+              "Content-Type": "application/json",
+              "Access-Control-Allow-Origin": "*",
+            },
           }
-        });
-
+        );
       } catch (err) {
         return new Response(JSON.stringify({ error: String(err) }), {
-          status: 500, headers: { "Content-Type": "application/json" }
+          status: 500,
+          headers: { "Content-Type": "application/json" },
         });
       }
     }
@@ -148,7 +167,7 @@ ${JSON.stringify(statsData.recent_games, null, 2)}
     // fallback for unknown endpoints
     return new Response(JSON.stringify({ error: "Endpoint not found" }), {
       status: 404,
-      headers: { "Content-Type": "application/json" }
+      headers: { "Content-Type": "application/json" },
     });
   },
 };
