@@ -152,7 +152,7 @@ export default {
         if (!statsRes.ok) throw new Error("Failed to fetch player stats");
         const statsData = await statsRes.json() as LastGamesResponse;
 
-        // Build AI prompt
+        // Building AI prompt
         const prompt = `
 You are an expert NBA analyst.
 Analyze the following recent game stats and summarize the player's performance clearly and concisely.
@@ -162,7 +162,7 @@ Stats:
 ${JSON.stringify(statsData.recent_games, null, 2)}
 `;
 
-        // Call LLaMA AI
+        // Call llama AI
         const aiResponse = await env.AI.run("@cf/meta/llama-3-8b-instruct", { prompt, max_tokens: 300 });
         const analysis = aiResponse.response;
 
@@ -191,7 +191,7 @@ ${JSON.stringify(statsData.recent_games, null, 2)}
       }
     }
 
-    // Endpoint not found
+    
     return new Response(JSON.stringify({ error: "Endpoint not found" }), {
       status: 404,
       headers: {
