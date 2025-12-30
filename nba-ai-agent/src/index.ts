@@ -39,11 +39,14 @@ export default {
 
     // Root endpoint
     if (url.pathname === "/") {
-      return new Response(JSON.stringify({ message: "NBA API TypeScript Worker is running" }), {
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*"
-        },
+      try {
+        
+        const html = await fetch(new URL("../public/index.html", import.meta.url)).then(r => r.text());
+        return new Response(html, {
+          headers: {
+            "Content-Type": "text/html",
+            "Access-Control-Allow-Origin": "*", // allow CORS
+          },
       });
     }
 
@@ -116,7 +119,7 @@ export default {
     // ai/analyze_player endpoint
     if (url.pathname === "/ai/analyze_player" && request.method === "POST") {
       try {
-        // Read JSON body safely
+        
         const body = await request.json() as AnalyzePlayerRequest;
         const playerName = body.name;
 
