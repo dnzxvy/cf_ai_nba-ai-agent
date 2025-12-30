@@ -1,6 +1,7 @@
 export interface Env {
   AI: any;
   NBA_MEMORY: KVNamespace;
+  ASSETS: Fetcher; // This will be bound to your public folder
 }
 
 const PYTHON_API_BASE = "https://cf-ai-nba-ai-agent.onrender.com";
@@ -26,28 +27,13 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
-    // Handle CORS preflight
-    if (request.method === "OPTIONS") {
-      return new Response(null, {
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type"
-        }
-      });
-    }
-
-    // Root endpoint
+    // Root endpoint: serve the HTML from public folder
     if (url.pathname === "/") {
       try {
-        
-        const html = await fetch(new URL("../public/index.html", import.meta.url)).then(r => r.text());
-        return new Response(html, {
-          headers: {
-            "Content-Type": "text/html",
-            "Access-Control-Allow-Origin": "*", // allow CORS
-          },
-      });
+        return await env.ASSETS.fetch("index.html"); // fetch index.html from public
+      } catch (err) {
+        return new Response("Error loading HTML", { status: 500 });
+      }
     }
 
     // /search_player endpoint
@@ -55,30 +41,16 @@ export default {
       const name = url.searchParams.get("name");
       if (!name) return new Response(JSON.stringify({ error: "Missing name parameter!" }), {
         status: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*"
-        },
+        headers: { "Content-Type": "application/json" },
       });
 
       try {
         const response = await fetch(`${PYTHON_API_BASE}/search_player?name=${encodeURIComponent(name)}`);
         if (!response.ok) throw new Error(`Python API returned ${response.status}`);
         const data = await response.json();
-        return new Response(JSON.stringify(data), {
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*"
-          }
-        });
+        return new Response(JSON.stringify(data), { headers: { "Content-Type": "application/json" } });
       } catch (err) {
-        return new Response(JSON.stringify({ error: String(err) }), {
-          status: 500,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*"
-          }
-        });
+        return new Response(JSON.stringify({ error: String(err) }), { status: 500, headers: { "Content-Type": "application/json" } });
       }
     }
 
@@ -89,73 +61,57 @@ export default {
 
       if (!name) return new Response(JSON.stringify({ error: "Missing name parameter" }), {
         status: 400,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*"
-        },
+        headers: { "Content-Type": "application/json" },
       });
 
       try {
         const response = await fetch(`${PYTHON_API_BASE}/player/lastgames_by_name?name=${encodeURIComponent(name)}&num_games=${numGames}`);
         if (!response.ok) throw new Error(`Python API returned ${response.status}`);
         const data = await response.json();
-        return new Response(JSON.stringify(data), {
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*"
-          }
-        });
+        return new Response(JSON.stringify(data), { headers: { "Content-Type": "application/json" } });
       } catch (err) {
-        return new Response(JSON.stringify({ error: String(err) }), {
-          status: 500,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*"
-          }
-        });
+        return new Response(JSON.stringify({ error: String(err) }), { status: 500, headers: { "Content-Type": "application/json" } });
       }
     }
 
-    // ai/analyze_player endpoint
+    // /ai/analyze_player endpoint
     if (url.pathname === "/ai/analyze_player" && request.method === "POST") {
       try {
-        
         const body = await request.json() as AnalyzePlayerRequest;
         const playerName = body.name;
 
         if (!playerName) {
           return new Response(JSON.stringify({ error: "Missing player name" }), {
             status: 400,
-            headers: {
-              "Content-Type": "application/json",
-              "Access-Control-Allow-Origin": "*"
-            }
+            headers: { "Content-Type": "application/json" }
           });
         }
 
         const memoryKey = `player:${playerName.toLowerCase()}`;
 
-        // Check if player analysis is already in KV
+        // check memory first
         const cached = await env.NBA_MEMORY.get(memoryKey);
+
         if (cached) {
           return new Response(JSON.stringify({
             player: playerName,
             analysis: cached,
             source: "memory"
           }), {
-            headers: {
-              "Content-Type": "application/json",
-              "Access-Control-Allow-Origin": "*"
-            }
+            headers: { "Content-Type": "application/json" }
           });
         }
 
-        // Fetch last 5 games from Python API
-        const statsRes = await fetch(`${PYTHON_API_BASE}/player/lastgames_by_name?name=${encodeURIComponent(playerName)}&num_games=5`);
+        // fetch stats from Python API
+        const statsRes = await fetch(
+          `${PYTHON_API_BASE}/player/lastgames_by_name?name=${encodeURIComponent(playerName)}&num_games=5`
+        );
+
         if (!statsRes.ok) throw new Error("Failed to fetch player stats");
+
         const statsData = await statsRes.json() as LastGamesResponse;
 
-        // Building AI prompt
+        // build AI prompt
         const prompt = `
 You are an expert NBA analyst.
 Analyze the following recent game stats and summarize the player's performance clearly and concisely.
@@ -165,11 +121,10 @@ Stats:
 ${JSON.stringify(statsData.recent_games, null, 2)}
 `;
 
-        // Call llama AI
+        // call Llama AI
         const aiResponse = await env.AI.run("@cf/meta/llama-3-8b-instruct", { prompt, max_tokens: 300 });
-        const analysis = aiResponse.response;
 
-        // Store analysis in KV
+        const analysis = aiResponse.response;
         await env.NBA_MEMORY.put(memoryKey, analysis);
 
         return new Response(JSON.stringify({
@@ -179,28 +134,21 @@ ${JSON.stringify(statsData.recent_games, null, 2)}
         }), {
           headers: {
             "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*"
+            "Access-Control-Allow-Origin": "*" // allow requests from any origin
           }
         });
 
       } catch (err) {
         return new Response(JSON.stringify({ error: String(err) }), {
-          status: 500,
-          headers: {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*"
-          }
+          status: 500, headers: { "Content-Type": "application/json" }
         });
       }
     }
 
-    
+    // fallback for unknown endpoints
     return new Response(JSON.stringify({ error: "Endpoint not found" }), {
       status: 404,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*"
-      }
+      headers: { "Content-Type": "application/json" }
     });
   },
 };
