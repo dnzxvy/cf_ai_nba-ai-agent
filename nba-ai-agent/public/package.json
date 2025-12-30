@@ -1,6 +1,0 @@
-{
-  "scripts": {
-    "build": "npx tsc",
-    "deploy": "npm run build && npx wrangler deploy"
-  }
-}
