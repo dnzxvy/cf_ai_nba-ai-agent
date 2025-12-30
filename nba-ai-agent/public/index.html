@@ -110,7 +110,7 @@
     <div class="header"> NBA Assistant</div>
 
     <div id="messages" class="messages">
-        <div class="message assitant">
+        <div class="message assistant">
             Hi!   
         Send me an NBA player name and I’ll analyze their recent performance.
 
@@ -128,8 +128,7 @@
   </div>
 
   <script>
-    const API_URL = 
-    "https://nba-ai-agent.nba-stats-bot.workers.dev/ai/analyze_player";
+    const API_URL = "https://nba-ai-agent.nba-stats-bot.workers.dev/ai/analyze_player";
 
     const input = document.getElementById("input");
     const sendBtn = document.getElementById("send");
@@ -138,6 +137,8 @@
     sendBtn.onclick = sendMessage;
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter") sendMessage();
+
+    
     });
 
     function addMessage(text, role, source) {
@@ -161,7 +162,7 @@
     }
 
     async function sendMessage() {
-        const name = input.value.trim;
+        const name = input.value.trim();
         if (!name) return;
 
         addMessage(name, "user");

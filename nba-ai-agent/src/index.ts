@@ -124,7 +124,11 @@ ${JSON.stringify(statsData.recent_games, null, 2)}
             const aiResponse = await env.AI.run("@cf/meta/llama-3-8b-instruct", {
               prompt, max_tokens: 300});
 
-            const analysis = aiResponse.response;
+            const analysis =
+              aiResponse.result?.response ||
+              aiResponse.result?.text ||
+              JSON.stringify(aiResponse);
+
             await env.NBA_MEMORY.put(memoryKey, analysis)
 
             return new Response(JSON.stringify({
