@@ -49,7 +49,6 @@ def player_last_games(name: str, num_games: int = 5):
         season="2026-27",
         season_type_all_star="Regular Season",
         timeout=15
-
         )
         df = gamelog.get_data_frames()[0]
 
