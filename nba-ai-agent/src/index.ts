@@ -8,6 +8,7 @@ const PYTHON_API_BASE = "https://cf-ai-nba-ai-agent.onrender.com";
 
 interface AnalyzePlayerRequest {
   name: string;
+  question: string;
 }
 
 interface PlayerGame {
@@ -91,13 +92,22 @@ export default {
       try {
         const body = (await request.json()) as AnalyzePlayerRequest;
         const playerName = body.name;
+        const userQuestion = body.question;
 
-        if (!playerName) {
-          return new Response(JSON.stringify({ error: "Missing player name" }), {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-          });
-        }
+        if (
+          typeof playerName !== "string" ||
+          !playerName.trim() ||
+          typeof userQuestion !== "string" ||
+          !userQuestion.trim()
+      ) {
+           return new Response(
+            JSON.stringify({ error: "Player name and question are required" }),
+            {
+              status: 400,
+              headers: { "Content-Type": "application/json" },
+            }
+        );
+      }
 
         const memoryKey = `player:${playerName.toLowerCase()}`;
 
