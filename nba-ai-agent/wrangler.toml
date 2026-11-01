@@ -1,14 +1,14 @@
 name = "nba-ai-agent"
 main = "dist/index.js"
 compatibility_date = "2025-12-22"
-type = "javascript"
+
 
 [ai]
 binding = "AI"
 
 [build]
 command = "npm run build"
-upload_format = "modules"
+
 
 [[kv_namespaces]]
 binding = "NBA_MEMORY"
