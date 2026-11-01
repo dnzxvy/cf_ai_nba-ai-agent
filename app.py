@@ -46,7 +46,7 @@ def player_last_games(name: str, num_games: int = 5):
     try:
         gamelog = playergamelog.PlayerGameLog(
             player_id=str(player_id),
-            season="2026-27"
+            season="2026-27",
             season_type_all_star="Regular Season",
             headers=NBA_HEADERS,
             timeout=30
