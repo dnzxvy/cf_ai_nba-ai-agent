@@ -157,7 +157,9 @@ User question: ${userQuestion}
         });
 
         const analysis = aiResponse.response;
-        await env.NBA_MEMORY.put(memoryKey, analysis);
+        await env.NBA_MEMORY.put(memoryKey, analysis, {
+          expirationTtl: 3600
+        });
 
         return new Response(
           JSON.stringify({
