@@ -136,12 +136,18 @@ export default {
 
         // build AI prompt
         const prompt = `
-You are an expert NBA analyst.
-Analyze the following recent game stats and summarize the player's performance clearly and concisely.
+You are an expert NBA basketball analyst.
+
+Answer the user's question using the NBA statistics provided below.
+Use specific numbers to support your explanation.
+Do not invent statistics or claim to know results that are not provided.
+If the statistics are insufficient, explain what information is missing
 
 Player: ${playerName}
 Stats:
 ${JSON.stringify(statsData.recent_games, null, 2)}
+
+User question: ${userQuestion}
 `;
 
         // call Llama AI
