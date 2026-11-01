@@ -4,6 +4,18 @@ from nba_api.stats.endpoints import  playercareerstats, playergamelog
 
 app = FastAPI()
 
+NBA_HEADERS = {
+    "Host": "stats.nba.com",
+    "Connection": "keep-alive",
+    "Accept": "application/json, text/plain, */*",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36",
+    "Referer": "https://www.nba.com/",
+    "Origin": "https://www.nba.com",
+    "x-nba-stats-origin": "stats",
+    "x-nba-stats-token": "true",
+    "Accept-Language": "en-US,en;q=0.9"
+}
+
 @app.get("/")
 def root():
     return {"message": "NBA API Python app is running"}
@@ -34,7 +46,9 @@ def player_last_games(name: str, num_games: int = 5):
     try:
         gamelog = playergamelog.PlayerGameLog(
             player_id=str(player_id),
-            season_type_all_star="Regular Season"
+            season_type_all_star="Regular Season",
+            headers=NBA_HEADERS,
+            timeout=120
         )
         df = gamelog.get_data_frames()[0]
 
