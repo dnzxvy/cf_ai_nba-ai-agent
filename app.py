@@ -86,3 +86,26 @@ def player_career_by_name(name: str):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/test_nba_connection")
+def test_nba_connection():
+    from nba_api.stats.endpoints import leaguedashteamstats
+
+    try:
+        stats = leaguedashteamstats.LeagueDashTeamStats(
+            season="2026-27",
+            timeout=10
+        )
+
+        df = stats.get_data_frames()[0]
+
+        return {
+            "status": "success",
+            "teams_found": len(df)
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
