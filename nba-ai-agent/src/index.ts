@@ -109,7 +109,7 @@ export default {
         );
       }
 
-        const memoryKey = `player:${playerName.toLowerCase()}`;
+        const memoryKey = `player:${playerName.trim().toLowerCase()}:question:${userQuestion.trim().toLowerCase()}`;
 
         // check memory first
         const cached = await env.NBA_MEMORY.get(memoryKey);
